@@ -138,7 +138,7 @@ class Subscription<State> {
      */
     fun only(whenBlock: (oldState: State, newState: State) -> Boolean): Subscription<State>{
         return this.skipRepeats { oldState, newState ->
-            whenBlock(oldState, newState)
+            !whenBlock(oldState, newState)
         }
     }
 
