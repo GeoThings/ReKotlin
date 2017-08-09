@@ -1,0 +1,217 @@
+## ReKotlin (preview)
+
+[![License MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/ReSwift/ReSwift/blob/master/LICENSE.md)
+
+Port of [ReSwift](https://github.com/ReSwift/ReSwift) to Kotlin, which corresponds to [ReSwift/4.0.0](https://github.com/ReSwift/ReSwift/releases/tag/4.0.0)
+
+## Introduction
+
+ReKotlin is a [Redux](https://github.com/reactjs/redux)-like implementation of the unidirectional data flow architecture in Kotlin. ReKotlin helps you to separate three important concerns of your app's components:
+
+- **State**: in a ReKotlin app the entire app state is explicitly stored in a data structure. This helps avoid complicated state management code, enables better debugging and has many, many more benefits...
+- **Views**: in a ReKotlin app your views update when your state changes. Your views become simple visualizations of the current app state.
+- **State Changes**: in a ReKotlin app you can only perform state changes through actions. Actions are small pieces of data that describe a state change. By drastically limiting the way state can be mutated, your app becomes easier to understand and it gets easier to work with many collaborators.
+
+The ReKotlin library is tiny - allowing users to dive into the code, understand every single line and hopefully contribute.
+
+
+## About ReKotlin
+
+ReSwift relies on a few principles:
+- **The Store** stores your entire app state in the form of a single data structure. This state can only be modified by dispatching Actions to the store. Whenever the state in the store changes, the store will notify all observers.
+- **Actions** are a declarative way of describing a state change. Actions don't contain any code, they are consumed by the store and forwarded to reducers. Reducers will handle the actions by implementing a different state change for each action.
+- **Reducers** provide pure functions, that based on the current action and the current app state, create a new app state
+
+![](Docs/img/reswift_concept.png)
+
+For a very simple app, that maintains a counter that can be increased and decreased, you can define the app state as following:
+
+```kotlin
+data class AppState (
+        val counter: Int = 0
+): StateType
+```
+
+You would also define two actions, one for increasing and one for decreasing the counter. For the simple actions in this example we can define empty data classes that conform to action:
+
+```kotlin
+data class CounterActionIncrease(val unit: Unit = Unit): Action
+data class CounterActionDecrease(val unit: Unit = Unit): Action
+```
+
+Your reducer needs to respond to these different action types, that can be done by switching over the type of action:
+
+```kotlin
+fun counterReducer(action: Action, state: AppState?): AppState {
+    // if no state has been provided, create the default state
+    var state = state ?: AppState()
+
+    when(action){
+        is CounterActionIncrease -> {
+            state = state.copy(counter = state.counter + 1)
+        }
+        is CounterActionDecrease -> {
+            state = state.copy(counter = state.counter - 1)
+        }
+    }
+
+    return state
+}
+```
+In order to have a predictable app state, it is important that the reducer is always free of side effects, it receives the current app state and an action and returns the new app state.
+
+To maintain our state and delegate the actions to the reducers, we need a store. Let's call it `mainStore` and define it as a global constant, for example in the Main Activity file:
+
+```kotlin
+val mainStore = Store(
+     reducer = ::counterReducer,
+     state = null
+)
+
+class MainActivity : AppCompatActivity(){
+	//...
+}
+```
+
+
+Lastly, your view layer, in this case an activity, needs to tie into this system by subscribing to store updates and emitting actions whenever the app state needs to be changed:
+
+```kotlin
+class MainActivity : AppCompatActivity(), StoreSubscriber<AppState> {
+
+    private val counterLabel: TextView by lazy {
+        this.findViewById(R.id.counter_label) as TextView
+    }
+
+    private val buttonUp: Button by lazy {
+        this.findViewById(R.id.button) as Button
+    }
+
+    private val buttonDown: Button by lazy {
+        this.findViewById(R.id.button2) as Button
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // when either button is tapped, an action is dispatched to the store
+        // in order to update the application state
+        this.buttonUp.setOnClickListener {
+            mainStore.dispatch(CounterActionIncrease())
+        }
+        this.buttonDown.setOnClickListener {
+            mainStore.dispatch(CounterActionDecrease())
+        }
+
+        // subscribe to state changes
+        mainStore.subscribe(this)
+    }
+
+    override fun newState(state: AppState) {
+        // when the state changes, the UI is updated to reflect the current state
+        this.counterLabel.text = "${state.counter}"
+    }
+}
+```
+
+The `newState` method will be called by the `Store` whenever a new app state is available, this is where we need to adjust our view to reflect the latest app state.
+
+Button taps result in dispatched actions that will be handled by the store and its reducers, resulting in a new app state.
+
+This is a very basic example that only shows a subset of ReSwift's features, read the Getting Started Guide __(not ported yet)__ to see how you can build entire apps with this architecture. For a complete implementation of this example see the [ReKotlin-CounterExample](https://github.com/GeoThings/ReKotlin-CounterExample) project.
+
+[You can also watch this talk on the motivation behind the original ReSwift](https://realm.io/news/benji-encz-unidirectional-data-flow-swift/).
+
+## Why ReKotlin?
+
+Model-View-Controller (MVC) is not a holistic application architecture. Typical apps defer a lot of complexity to controllers since MVC doesn't offer other solutions for state management, one of the most complex issues in app development.
+
+Apps built upon MVC often end up with a lot of complexity around state management and propagation. We need to use callbacks, delegations, Key-Value-Observation and notifications to pass information around in our apps and to ensure that all the relevant views have the latest state.
+
+This approach involves a lot of manual steps and is thus error prone and doesn't scale well in complex code bases.
+
+It also leads to code that is difficult to understand at a glance, since dependencies can be hidden deep inside of view controllers. Lastly, you mostly end up with inconsistent code, where each developer uses the state propagation procedure they personally prefer. You can circumvent this issue by style guides and code reviews but you cannot automatically verify the adherence to these guidelines.
+
+ReKotlin attempts to solve these problem by placing strong constraints on the way applications can be written. This reduces the room for programmer error and leads to applications that can be easily understood - by inspecting the application state data structure, the actions and the reducers.
+
+This architecture provides further benefits beyond improving your code base:
+
+- Stores, Reducers, Actions and extensions such as ReSwift Router __(port not yet available)__ are entirely platform independent - you can easily use the same business logic and share it between apps for multiple platforms
+- Want to collaborate with a co-worker on fixing an app crash? Use __(port not yet available)__ [ReSwift Recorder](https://github.com/ReSwift/ReSwift-Recorder) to record the actions that lead up to the crash and send them the JSON file so that they can replay the actions and reproduce the issue right away.
+- Maybe recorded actions can be used to build UI and integration tests?
+
+The ReKotlin tooling is still in a very early stage, but aforementioned prospects excite us and hopefully others in the community as well!
+
+## Getting Started Guide
+
+Getting started guide has not yet been ported. In the meantime, please refer to original ReSwift's:
+[Getting Started Guide that describes the core components of apps built with ReSwift](http://reswift.github.io/ReSwift/master/getting-started-guide.html). 
+
+To get an understanding of the core principles we recommend reading the brilliant [redux documentation](http://redux.js.org/).
+
+## Installation
+
+We are still in preview here, so the package is not yet available at maven central repository. Instead please use our development repository:
+
+```gradle
+// build.gradle
+repositories {
+    maven {
+        url 'https://rekotlin.s3-ap-southeast-1.amazonaws.com/snapshots'
+    }
+}
+
+dependencies {
+	compile 'tw.geothings.rekotlin:rekotlin:0.1.0-SNAPSHOT'
+}
+
+```
+
+## Differences with ReSwift
+
+### Dereferencing subscribers will not result in subscription removed
+
+In ReSwift when you dereference the subscriber or it goes out of the scope, you won't receive new state updates. 
+
+```swift
+var subscriber: TestSubscriber? = TestSubscriber()
+store.subscribe(subscriber!)
+subscriber = nil
+```
+
+However in ReKotlin you need make sure you have unsubscribed explicitly.
+
+```kotlin
+val subscriber = TestSubscriber()
+store.subscribe(subscriber)
+store.unsubscribe(subscriber)
+```
+
+### Equatability and skipRepeats
+
+When subscribing without substate selection like `store.subscribe(someSubscriber)` in swift you need to have your state implementing Equatable in order to skipRepeats being applied automatically.
+
+```swift
+public struct State: StateType {
+    public let mapState: MapState
+    public let appState: AppState
+}
+
+extension State: Equatable {
+    public static func ==(lhs: State, rhs: State) -> Bool {
+        //...
+    }
+}
+
+```
+
+However in Kotlin(JVM) every object implements `equals()`, so that skipRepeats will be applied automatically when you `store.subscribe(someSubscriber)`, with Kotlin [Structural Equality](https://kotlinlang.org/docs/reference/equality.html#structural-equality) check used.
+
+Please note, if you implement your states/substates with [data classes](https://kotlinlang.org/docs/reference/data-classes.html), Kotlin compiler will automatically derive non-shallow `equals()` from all properties declared in the primary constructor. 
+
+## Credits
+
+- Many thanks to [Benjamin Encz](https://twitter.com/benjaminencz) for buidling original [ReSwift](https://github.com/ReSwift/ReSwift) that we really enjoyed working with.
+- Also huge thanks to [Dan Abramov](https://github.com/gaearon) for building [Redux](https://github.com/reactjs/redux) - all ideas in here and many implementation details were provided by his library.
+
