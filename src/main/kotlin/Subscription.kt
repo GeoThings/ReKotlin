@@ -24,6 +24,17 @@ package tw.geothings.rekotlin
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * A box around subscriptions and subscribers.
+ *
+ * Acts as a type-erasing wrapper around a subscription and its transformed subscription.
+ * The transformed subscription has a type argument that matches the selected substate of the
+ * subscriber; however that type cannot be exposed to the store.
+ *
+ * The box subscribes either to the original subscription, or if available to the transformed
+ * subscription and passes any values that come through this subscriptions to the subscriber.
+ *
+ */
 class SubscriptionBox<State, SelectedState>(val originalSubscription: Subscription<State>,
                              transformedSubscription: Subscription<SelectedState>?,
                              val subscriber: StoreSubscriber<SelectedState>) where State: StateType {
@@ -140,7 +151,9 @@ class Subscription<State> {
         }
     }
 
-    /// Sends new values over this subscription. Observers will be notified of these new values.
+    /**
+     * Sends new values over this subscription. Observers will be notified of these new values.
+     */
     fun newValues(oldState: State?, newState: State){
         this.observer?.invoke(oldState, newState)
     }

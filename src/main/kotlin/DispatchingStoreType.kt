@@ -23,6 +23,12 @@ package tw.geothings.rekotlin
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
+/**
+ * Defines the interface of a dispatching, stateless Store in ReSwift. `StoreType` is
+ * the default usage of this interface. Can be used for store variables where you don't
+ * care about the state, but want to be able to dispatch actions.
+ */
 interface DispatchingStoreType {
 
     /**

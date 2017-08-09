@@ -24,11 +24,11 @@ package tw.geothings.rekotlin
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-class Store<State: StateType>(
+class Store<State: StateType> (
         private val reducer: Reducer<State>,
         state: State?,
         middleware: List<Middleware<State>> = emptyList(),
-        automaticallySkipRepeats: Boolean = true) {
+        automaticallySkipRepeats: Boolean = true): StoreType<State> {
 
     private var _state: State? = state
         set(value) {
@@ -42,11 +42,11 @@ class Store<State: StateType>(
             }
         }
 
-    val state: State
+    override val state: State
         get() { return _state!! }
 
     @Suppress("NAME_SHADOWING")
-    var dispatchFunction: DispatchFunction = middleware
+    override var dispatchFunction: DispatchFunction = middleware
             .reversed()
             .fold({ action: Action -> this._defaultDispatch(action) }, { dispatchFunction, middleware ->
                 val dispatch = { action: Action -> this.dispatch(action) }
@@ -67,21 +67,20 @@ class Store<State: StateType>(
         this._state?.let { this._state = state } ?: this.dispatch(ReKotlinInit())
     }
 
-    fun <SelectedState, S: StoreSubscriber<SelectedState>> subscribe(subscriber: S) {
+    override fun <S: StoreSubscriber<State>> subscribe(subscriber: S) {
 
         // if subscribersAutomaticallySkipsRepeat is set
         // skipRepeats will be applied with kotlin structural equality
         if (subscribersAutomaticallySkipsRepeat){
             this.subscribe(subscriber, {
-                @Suppress("UNCHECKED_CAST")
-                it.skipRepeats() as Subscription<SelectedState>
+                it.skipRepeats()
             })
         } else {
             this.subscribe(subscriber, null)
         }
     }
 
-    fun <SelectedState, S: StoreSubscriber<SelectedState>> subscribe(subscriber: S, transform: ((Subscription<State>) -> Subscription<SelectedState>)?) {
+    override fun <SelectedState, S: StoreSubscriber<SelectedState>> subscribe(subscriber: S, transform: ((Subscription<State>) -> Subscription<SelectedState>)?) {
         // If the same subscriber is already registered with the store, replace the existing
         // subscription with the new one.
         val index = this.subscriptions.indexOfFirst { it.subscriber === subscriber }
@@ -106,7 +105,7 @@ class Store<State: StateType>(
         }
     }
 
-    fun <SelectedState> unsubscribe(subscriber: StoreSubscriber<SelectedState>) where SelectedState: StateType {
+    override fun <SelectedState> unsubscribe(subscriber: StoreSubscriber<SelectedState>) {
         val index = this.subscriptions.indexOfFirst { it.subscriber === subscriber }
         if (index != -1){
             this.subscriptions.removeAt(index)
@@ -130,22 +129,22 @@ class Store<State: StateType>(
         this._state = newState
     }
 
-    fun dispatch(action: Action){
+    override fun dispatch(action: Action){
         this.dispatchFunction(action)
     }
 
-    fun dispatch(actionCreatorProvider: ActionCreator<State, Store<State>>){
-        actionCreatorProvider(this.state, this)?.let {
+    override fun dispatch(actionCreator: ActionCreator<State, StoreType<State>>){
+        actionCreator(this.state, this)?.let {
             this.dispatch(it)
         }
     }
 
-    fun dispatch(asynchActionCreatorProvider: AsynchActionCreator<State, Store<State>>){
-        this.dispatch(asynchActionCreatorProvider, null)
+    override fun dispatch(asyncActionCreator: AsyncActionCreator<State, StoreType<State>>){
+        this.dispatch(asyncActionCreator, null)
     }
 
-    fun dispatch(asynchActionCreatorProvider: AsynchActionCreator<State, Store<State>>, callback: DispatchCallback<State>?){
-        asynchActionCreatorProvider(this.state, this) { actionProvider ->
+    override fun dispatch(asyncActionCreator: AsyncActionCreator<State, StoreType<State>>, callback: DispatchCallback<State>?){
+        asyncActionCreator(this.state, this) { actionProvider ->
             val action = actionProvider(this.state, this)
 
             action?.let {
@@ -160,4 +159,4 @@ typealias DispatchCallback<State> = (State) -> Unit
 
 typealias ActionCreator<State, Store> = (state: State, store: Store) -> Action?
 
-typealias AsynchActionCreator<State, Store> = (state: State, store: Store, actionCreatorCallback: (ActionCreator<State, Store>) -> Unit) -> Unit
+typealias AsyncActionCreator<State, Store> = (state: State, store: Store, actionCreatorCallback: (ActionCreator<State, Store>) -> Unit) -> Unit
