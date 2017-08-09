@@ -17,7 +17,7 @@ The ReKotlin library is tiny - allowing users to dive into the code, understand 
 
 ## About ReKotlin
 
-ReSwift relies on a few principles:
+ReKotlin relies on a few principles:
 - **The Store** stores your entire app state in the form of a single data structure. This state can only be modified by dispatching Actions to the store. Whenever the state in the store changes, the store will notify all observers.
 - **Actions** are a declarative way of describing a state change. Actions don't contain any code, they are consumed by the store and forwarded to reducers. Reducers will handle the actions by implementing a different state change for each action.
 - **Reducers** provide pure functions, that based on the current action and the current app state, create a new app state
