@@ -117,7 +117,7 @@ class Store<State: StateType> (
             throw Exception(
                     "ReKotlin:ConcurrentMutationError- Action has been dispatched while" +
                     " a previous action is action is being processed. A reducer" +
-                    " is dispatching an action, or ReSwift is used in a concurrent context" +
+                    " is dispatching an action, or ReKotlin is used in a concurrent context" +
                     " (e.g. from multiple threads)."
             )
         }

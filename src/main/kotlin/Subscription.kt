@@ -38,6 +38,18 @@ package tw.geothings.rekotlin
 class SubscriptionBox<State, SelectedState>(val originalSubscription: Subscription<State>,
                              transformedSubscription: Subscription<SelectedState>?,
                              val subscriber: StoreSubscriber<SelectedState>) where State: StateType {
+
+    // hoping to mimic swift weak reference
+    // however this doesn't really work the same way, gc collects non-deterministically
+    // setting the original subscriber to null will not result in this being nulled synchronously
+    /*
+    var _subscriber: WeakReference<StoreSubscriber<SelectedState>> = WeakReference(subscriber)
+    val subscriber: StoreSubscriber<SelectedState>?
+        get() {
+            return _subscriber.get()
+        }
+    */
+
     init {
         // If we haven't received a transformed subscription, we forward all values
         // from the original subscription.
