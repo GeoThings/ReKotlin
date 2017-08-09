@@ -210,6 +210,15 @@ However in Kotlin(JVM) every object implements `equals()`, so that skipRepeats w
 
 Please note, if you implement your states/substates with [data classes](https://kotlinlang.org/docs/reference/data-classes.html), Kotlin compiler will automatically derive non-shallow `equals()` from all properties declared in the primary constructor. 
 
+If you want to opt-out of this behaviour please set `automaticallySkipRepeats` to __false__ in your store declaration:
+
+```kotlin
+val store = Store(
+	reducer::handleAction, 
+	state, 
+	automaticallySkipRepeats = false)
+```
+
 ## Credits
 
 - Many thanks to [Benjamin Encz](https://twitter.com/benjaminencz) for buidling original [ReSwift](https://github.com/ReSwift/ReSwift) that we really enjoyed working with.
