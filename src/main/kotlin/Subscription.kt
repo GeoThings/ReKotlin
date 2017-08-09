@@ -120,6 +120,16 @@ class Subscription<State> {
         }
     }
 
+    /** Provides a subscription that skips certain state updates of the original subscription.
+     *
+     * This is identical to `skipRepeats` and is provided simply for convenience.
+     * @param when A closure that determines whether a given state update is a repeat and
+     * thus should be skipped and not forwarded to subscribers.
+     */
+    fun skip(`when`: (oldState: State, newState: State) -> Boolean): Subscription<State>{
+        return this.skipRepeats(`when`)
+    }
+
     /**
      * Provides a subscription that only updates for certain state changes.
      *
