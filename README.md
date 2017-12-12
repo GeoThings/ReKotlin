@@ -2,6 +2,8 @@
 
 [![License MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/ReSwift/ReSwift/blob/master/LICENSE.md)
 
+### Has been moved to https://github.com/ReKotlin/ReKotlin
+
 Port of [ReSwift](https://github.com/ReSwift/ReSwift) to Kotlin, which corresponds to [ReSwift/4.0.0](https://github.com/ReSwift/ReSwift/releases/tag/4.0.0)
 
 ## Introduction
